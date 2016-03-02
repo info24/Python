@@ -1,0 +1,14 @@
+notes:
+str to dict:
+dict -> str ->dict
+
+a = {"kebo": 8｝  #{'kebo': 8}
+str_a = str(a)
+print str_a   # "{'kebo': 8}"
+
+json.loads(str_a)   # TypeError: expected string or buffer
+
+but if we replace it by "
+str_b = str_a.replace("'", '"')
+json.loads(str_b) #it get a dict
+
