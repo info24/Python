@@ -1,4 +1,6 @@
 notes:
+
+1.
 str to dict:
 dict -> str ->dict
 
@@ -12,3 +14,17 @@ but if we replace it by "
 str_b = str_a.replace("'", '"')
 json.loads(str_b) #it get a dict
 
+2.
+>>> a = [1, 2, 3, 4, 5]
+>>> a[2:3] = [0, 0]
+>>> a
+[1, 2, 0, 0, 4, 5]
+>>> a[1:1] = [8, 9]
+>>> a
+[1, 8, 9, 2, 0, 0, 4, 5]
+>>> a[1:-1] = []
+>>> a
+[1, 5]
+detail visit the url: http://www.oschina.net/translate/thirty-python-language-features-and-tricks-you-may-not-know
+
+3.
