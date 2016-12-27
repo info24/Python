@@ -1,0 +1,254 @@
+十二.   行的排序命令sort:
+
+  1.  sort命令行选项：
+
+选项	描述
+-t	字段之间的分隔符
+-f	基于字符排序时忽略大小写
+-k	定义排序的域字段，或者是基于域字段的部分数据进行排序
+-m	将已排序的输入文件，合并为一个排序后的输出数据流
+-n	以整数类型比较字段
+-o outfile	将输出写到指定的文件
+-r	倒置排序的顺序为由大到小，正常排序为由小到大
+-u	只有唯一的记录，丢弃所有具有相同键值的记录
+-b	忽略前面的空格
+
+   2.  sort使用实例：
+    提示：在下面的输出结果中红色标注的为第一排序字段，后面的依次为紫、绿。
+    /> sed -n '1,5p' /etc/passwd > users
+    /> cat users
+    root:x:0:0:root:/root:/bin/bash
+    bin:x:1:1:bin:/bin:/sbin/nologin
+    daemon:x:2:2:daemon:/sbin:/sbin/nologin
+    adm:x:3:4:adm:/var/adm:/sbin/nologin
+    lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+
+    #-t定义了冒号为域字段之间的分隔符，-k 1指定基于第一个字段正向排序(字段顺序从1开始)。
+    /> sort -t':' -k 1 users
+    adm:x:3:4:adm:/var/adm:/sbin/nologin
+    bin:x:1:1:bin:/bin:/sbin/nologin
+    daemon:x:2:2:daemon:/sbin:/sbin/nologin
+    lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+    root:x:0:0:root:/root:/bin/bash
+
+    #还是以冒号为分隔符，这次是基于第三个域字段进行倒置排序。
+    /> sort -t':' -k 3r users
+    lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+    adm:x:3:4:adm:/var/adm:/sbin/nologin
+    daemon:x:2:2:daemon:/sbin:/sbin/nologin
+    bin:x:1:1:bin:/bin:/sbin/nologin
+    root:x:0:0:root:/root:/bin/bash
+
+    #先以第六个域的第2个字符到第4个字符进行正向排序，再基于第一个域进行反向排序。
+    /> sort -t':' -k 6.2,6.4 -k 1r users
+    bin:x:1:1:bin:/bin:/sbin/nologin
+    root:x:0:0:root:/root:/bin/bash
+    daemon:x:2:2:daemon:/sbin:/sbin/nologin
+    lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+    adm:x:3:4:adm:/var/adm:/sbin/nologin
+
+    #先以第六个域的第2个字符到第4个字符进行正向排序，再基于第一个域进行正向排序。和上一个例子比，第4和第5行交换了位置。
+    /> sort -t':' -k 6.2,6.4 -k 1 users
+    bin:x:1:1:bin:/bin:/sbin/nologin
+    root:x:0:0:root:/root:/bin/bash
+    daemon:x:2:2:daemon:/sbin:/sbin/nologin
+    adm:x:3:4:adm:/var/adm:/sbin/nologin
+    lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+
+    #基于第一个域的第2个字符排序
+    /> sort -t':' -k 1.2,1.2 users    
+    daemon:x:2:2:daemon:/sbin:/sbin/nologin
+    adm:x:3:4:adm:/var/adm:/sbin/nologin
+    bin:x:1:1:bin:/bin:/sbin/nologin
+    root:x:0:0:root:/root:/bin/bash
+    lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+
+    #基于第六个域的第2个字符到第4个字符进行正向排序，-u命令要求在排序时删除键值重复的行。
+    /> sort -t':' -k 6.2,6.4 -u users
+    bin:x:1:1:bin:/bin:/sbin/nologin
+    root:x:0:0:root:/root:/bin/bash
+    daemon:x:2:2:daemon:/sbin:/sbin/nologin
+    adm:x:3:4:adm:/var/adm:/sbin/nologin
+
+    /> cat /etc/passwd | wc -l  #计算该文件中文本的行数。
+    39
+    /> sed -n '35,$p' /etc/passwd > users2  #取最后5行并输出到users2中。
+    /> cat users2
+    sshd:x:74:74:Privilege-separated SSH:/var/empty/sshd:/sbin/nologin
+    mysql:x:27:27:MySQL Server:/var/lib/mysql:/bin/bash
+    pulse:x:496:494:PulseAudio System Daemon:/var/run/pulse:/sbin/nologin
+    gdm:x:42:42::/var/lib/gdm:/sbin/nologin
+    stephen:x:500:500:stephen:/home/stephen:/bin/bash
+
+    #基于第3个域字段以文本的形式排序
+    /> sort -t':' -k 3 users2
+    mysql:x:27:27:MySQL Server:/var/lib/mysql:/bin/bash
+    gdm:x:42:42::/var/lib/gdm:/sbin/nologin
+    pulse:x:496:494:PulseAudio System Daemon:/var/run/pulse:/sbin/nologin
+    stephen:x:500:500:stephen:/home/stephen:/bin/bash
+    sshd:x:74:74:Privilege-separated SSH:/var/empty/sshd:/sbin/nologin
+
+    #基于第3个域字段以数字的形式排序
+    /> sort -t':' -k 3n users2
+    mysql:x:27:27:MySQL Server:/var/lib/mysql:/bin/bash
+    gdm:x:42:42::/var/lib/gdm:/sbin/nologin
+    sshd:x:74:74:Privilege-separated SSH:/var/empty/sshd:/sbin/nologin
+    pulse:x:496:494:PulseAudio System Daemon:/var/run/pulse:/sbin/nologin
+    stephen:x:500:500:stephen:/home/stephen:/bin/bash
+
+    #基于当前系统执行进程的owner名排序，并将排序的结果写入到result文件中
+    /> ps -ef | sort -k 1 -o result
+
+十三. 删除重复行的命令uniq:
+
+    uniq有3个最为常用的选项，见如下列表：
+
+选项	命令描述
+-c	可在每个输出行之前加上该行重复的次数
+-d	仅显示重复的行
+-u	显示没有重复的行
+    /> cat testfile
+    hello
+    world
+    friend
+    hello
+    world
+    hello
+
+    #直接删除未经排序的文件，将会发现没有任何行被删除
+    /> uniq testfile  
+    hello
+    world
+    friend
+    hello
+    world
+    hello
+
+    #排序之后删除了重复行，同时在行首位置输出该行重复的次数
+    /> sort testfile | uniq -c  
+    1 friend
+    3 hello
+    2 world
+
+    #仅显示存在重复的行，并在行首显示该行重复的次数
+    /> sort testfile | uniq -dc
+    3 hello
+    2 world
+
+    #仅显示没有重复的行
+    /> sort testfile | uniq -u
+    friend  
+
+
+十四. 文件压缩解压命令tar:
+
+   1.  tar命令行选项
+
+选项	命令描述
+-c	建立压缩档案
+-x	解压
+--delete	从压缩包中删除已有文件，如果该文件在包中出现多次，该操作将其全部删除。
+-t	查看压缩包中的文件列表
+-r	向压缩归档文件末尾追加文件
+-u	更新原压缩包中的文件
+-z	压缩为gzip格式，或以gzip格式解压
+-j	压缩为bzip2格式，或以bzip2格式解压
+-v	显示压缩或解压的过程，该选项一般不适于后台操作
+-f	使用档案名字，这个参数是最后一个参数，后面只能接档案名。
+
+    2.  tar使用实例：
+    #将当前目录下所有文件压缩打包，需要说明的是很多人都习惯将tar工具压缩的文件的扩展名命名为.tar
+    /> tar -cvf test.tar *
+    -rw-r--r--. 1 root root   183 Nov 11 08:02 users
+    -rw-r--r--. 1 root root   279 Nov 11 08:45 users2
+
+    /> cp ../*.log .                  #从上一层目录新copy一个.log文件到当前目录。
+    /> tar -rvf test.tar *.log     #将扩展名为.log的文件追加到test.tar包里。
+    /> tar -tvf test.tar
+    -rw-r--r-- root/root        183 2011-11-11 08:02 users
+    -rw-r--r-- root/root        279 2011-11-11 08:45 users2
+    -rw-r--r-- root/root     48217 2011-11-11 22:16 install.log
+
+    /> touch install.log           #使原有的文件更新一下最新修改时间
+    /> tar -uvf test.tar *.log    #重新将更新后的log文件更新到test.tar中
+    /> tar -tvf test.tar             #从输出结果可以看出tar包中多出一个更新后install.log文件。
+    -rw-r--r-- root/root         183 2011-11-11 08:02 users
+    -rw-r--r-- root/root         279 2011-11-11 08:45 users2
+    -rw-r--r-- root/root     48217 2011-11-11 22:16 install.log
+    -rw-r--r-- root/root     48217 2011-11-11 22:20 install.log
+
+    /> tar --delete install.log -f test.tar #基于上面的结果，从压缩包中删除install.log
+    -rw-r--r-- root/root       183 2011-11-11 08:02 users
+    -rw-r--r-- root/root       279 2011-11-11 08:45 users2
+
+    /> rm -f users users2      #从当前目录将tar中的两个文件删除
+    /> tar -xvf test.tar          #解压
+    /> ls -l users*                 #仅列出users和users2的详细列表信息
+    -rw-r--r--. 1 root root 183 Nov 11 08:02 users
+    -rw-r--r--. 1 root root 279 Nov 11 08:45 users2
+
+    #以gzip的格式压缩并打包，解压时也应该以同样的格式解压，需要说明的是以该格式压缩的包习惯在扩展名后加.gz
+    /> tar -cvzf test.tar.gz *
+    /> tar -tzvf test.tar.gz      #查看压缩包中文件列表时也要加z选项(gzip格式)
+    -rw-r--r-- root/root     48217 2011-11-11 22:50 install.log
+    -rw-r--r-- root/root         183 2011-11-11 08:02 users
+    -rw-r--r-- root/root         279 2011-11-11 08:45 users2
+
+    /> rm -f users users2 install.log
+    /> tar -xzvf test.tar.gz     #以gzip的格式解压
+    /> ls -l *.log users*
+    -rw-r--r-- root/root     48217 2011-11-11 22:50 install.log
+    -rw-r--r-- root/root         183 2011-11-11 08:02 users
+    -rw-r--r-- root/root         279 2011-11-11 08:45 users2
+
+    /> rm -f test.*                #删除当前目录下原有的压缩包文件
+    #以bzip2的格式压缩并打包，解压时也应该以同样的格式解压，需要说明的是以该格式压缩的包习惯在扩展名后加.bz2
+    /> tar -cvjf test.tar.bz2 *
+    /> tar -tjvf test.tar.bz2    #查看压缩包中文件列表时也要加j选项(bzip2格式)
+    -rw-r--r-- root/root     48217 2011-11-11 22:50 install.log
+    -rw-r--r-- root/root         183 2011-11-11 08:02 users
+    -rw-r--r-- root/root         279 2011-11-11 08:45 users2
+
+    /> rm -f *.log user*
+    /> tar -xjvf test.tar.bz2    #以bzip2的格式解压
+    /> ls -l
+    -rw-r--r--. 1 root root 48217 Nov 11 22:50 install.log
+    -rw-r--r--. 1 root root 10530 Nov 11 23:08 test.tar.bz2
+    -rw-r--r--. 1 root root     183 Nov 11 08:02 users
+    -rw-r--r--. 1 root root     279 Nov 11 08:45 users2
+
+十五. 大文件拆分命令split:
+
+    下面的列表中给出了该命令最为常用的几个命令行选项：
+
+选项	描述
+-l	指定行数，每多少分隔成一个文件，缺省值为1000行。
+-b	指定字节数，支持的单位为：k和m
+-C	与-b参数类似，但切割时尽量维持每行的完整性
+-d	生成文件的后缀为数字，如果不指定该选项，缺省为字母
+    /> ls -l
+    -rw-r--r--. 1 root root 10530 Nov 11 23:08 test.tar.bz2
+
+    /> split -b 5k test.tar.bz2     #以每文件5k的大小切割test.tar.bz2
+    /> ls -l                                #查看切割后的结果，缺省情况下拆分后的文件名为以下形式。
+    -rw-r--r--. 1 root root 10530 Nov 11 23:08 test.tar.bz2
+    -rw-r--r--. 1 root root   5120 Nov 11 23:34 xaa
+    -rw-r--r--. 1 root root   5120 Nov 11 23:34 xab
+    -rw-r--r--. 1 root root     290 Nov 11 23:34 xac
+
+    /> rm -f x*                         #删除拆分后的小文件
+    /> split -d -b 5k test.tar.bz2 #-d选项以后缀为数字的形式命名拆分后的小文件
+    /> ls -l
+    -rw-r--r--. 1 root root 10530 Nov 11 23:08 test.tar.bz2
+    -rw-r--r--. 1 root root   5120 Nov 11 23:36 x00
+    -rw-r--r--. 1 root root   5120 Nov 11 23:36 x01
+    -rw-r--r--. 1 root root     290 Nov 11 23:36 x02
+
+    /> wc install.log -l             #计算该文件的行数
+    /> split -l 300 install.log     #每300行拆分成一个小文件
+    /> ls -l x*
+    -rw-r--r--. 1 root root 11184 Nov 11 23:42 xaa
+    -rw-r--r--. 1 root root 10805 Nov 11 23:42 xab
+    -rw-r--r--. 1 root root 12340 Nov 11 23:42 xac
+    -rw-r--r--. 1 root root 11783 Nov 11 23:42 xad
+    -rw-r--r--. 1 root root   2105 Nov 11 23:42 xae
