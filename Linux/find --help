@@ -1,0 +1,247 @@
+要在/usr/linux中查找所有的*.h，并在这些文件中查找“SYSCALL_VECTOR"，最后打印出所有包含"SYSCALL_VECTOR"的文件名，有以下几种方法实现
+find /usr/linux -name "*.h" | xargs -n50 grep SYSCALL_VECTOR
+grep SYSCALL_VECTOR /usr/linux/*.h | cut -d’:’ -f1 | uniq > filename
+find /usr/linux -name "*.h" -exec grep "SYSCALL_VECTOR" {} \; -print
+
+　　我用find / -name filename| rm -rf，不成功，请问为什么不成功？
+find / -name filename -exec rm -rf {} \;
+find . -name filename |rm -rf试一下{} 表示你找出来的结果。
+\; 则相当于“宪法”，没什么说头，就是这么规定的，在 -exec 后面需要一个表示该命令终结的的符号。可以在 man find 中找到答案。
+要让rm识别find的结果，如下：
+find / -name filename |xargs rm -rf
+之所以find . -name filename |rm -rf不通过，是因为rm命令不接受从标准输入传过来的指令
+查找含特定字符串的文件
+例如查找当前目录下含有"the string you want find…"字符串的文件：
+$find . -type f -exec grep “the string you want find…” {} ; -print
+
+　　从根目录开始查tmpfile，一旦查到马上删除
+find / -name "tmpfile" -exec rm {} \;
+
+　　find 的perm问题
+请问一下以下命令什么意思？关键是那个数字前的-，其他都还知道
+find -name ".*" -perm -007
+我知道
+find -name ".*" -perm 755
+这个是用来查找权限位为755的隐藏文件
+噢，对了还有，我上边的命令都省略了find的pathname参数 find默认是查找当前工作目录的吗？
+如果我用 -ok 替代 -exec, 那么还需要加上 {} \; 吗？
+这个已经清楚，仍然需要，因为 -ok 只是 -exec 的提示模式，它只是多了一个确认操作的步骤,刚才没有读懂那几句E文的意思 呵呵 不好意思
+-007是指查找所有用户都可读、写、执行的文件，要小心呀~~~
+解释解释？
+find -name ".*" -perm -007 和 find -name ".*" -perm 777 有区别吗？
+-007是怎么来得呢？
+不过有一个问题
+我用 find . -perm -100 会列出当前目录 . , 这是为什么呢？
+
+下面引用由explover在 2002/10/01 06:15am 发表的内容：
+-007是指查找所有用户都可读、写、执行的文件，要小心呀~~~
+-007是查找含其它用户(不同组,非属主)可读,写,执行的文件.并不一定要同组可读写,-是指最少权限为007.
+下面引用由一颗小白菜在 2002/10/01 10:16am 发表的内容：
+OK了， 呵呵
+不过有一个问题
+我用 find . -perm -100 会列出当前目录 . , 这是为什么呢？
+这种方法不会准确的找出目录的. -100是指权限至少是属主可运行.
+在unix系统下,你可以拥有对目录文件的执行权你才可以进入一个目录.这便是目录文件被列出的原因.
+find . -perm -001 -print找到往往是目录文件.
+我的意思当然不是使用这种方法来找目录，只不过不明白其中的 -100 意义了
+那以此类推，是不是 -010是指权限至少是owner同组可执行的吗？也就是说其实这里的010和-是分开的，-表示一个至少的意思，而且010才是真正用来描述权限位的？
+这样子就明白了 谢谢你噢
+
+　　将find出来的东西拷到另一个地方?
+find *.c -exec cp ‘{}’ /tmp ‘;’
+如果有特殊文件，可以用cpio，也可以用这样的语法：
+find dir -name filename -print | cpio -pdv newdir
+
+　　找出磁盘中某个大小范围内的文件
+比如要查找磁盘中大于3M的文件：
+find . -size +3000k -exec ls -ld {} ;
+
+　　如何用find查找某一天更改的文件？
+可以使用这一行命令来实现：
+A=`find ~ -print` | ls -l –full-time $A 2>/dev/null | grep "Jun 27" | grep 1998
+
+　　使用find 命令查找某个时间段的shell怎么写。比如11点到12点的。thanks
+创建一个脚本judgetime，内容如下：
+ls -l $*|awk ‘{split($8,hour,":");if((hour[1]>23 || hour[1] < 1)&&hour[1]<24)print}’
+到要查找的目录下，运行
+find ./ -name "*" -exec judgetime {} \;
+注意时间格式为２４小时制。
+thank you ，如果我要精确到分钟呢
+touch -t 04241112 starttemp #精确到12分钟
+touch -t 04241220 endtemp #截止到12点20
+find [dir] -newer starttemp -a ! -newer endtemp -exec ls -l {} \;
+ｎｅｗｅｒ？
+那昨天１２：１０文件如何呢？
+每天执行的时候，用当天的日期和时间戳替换一下不就行了吗？
+我不知道他是不是把所有的11：00~12：00的都找出来，是不是只执行一次还是每天都执行？
+这种情况俺猜想是自己的东西放在哪忘了，只记得当时是深夜了。
+有道理！
+不愧是斑竹！
+不光知道怎么解决问题，还知道在什么情况下出现这类问题，佩服佩服！
+问题又出现了。创建这个文件的时候。本来应该是时间的一栏现在写上了2002，而不是12：00.
+等到12：00过了吧！
+
+　　删除指定日期的文件
+find ./ -name 文件名 -exec rm -f {} \;
+例：删除当前30天内没用过的文件,用如下命令：
+find / -atime +30 -exec rm -f {} \;
+我自己试着写了一小段SHELL,也用ll ,grep, rm 几个命令，用起来还差强人意。
+对过滤出来的文件名列表中用了一个FOR语句，再执行rm 。现在我想把这段SHELL 扩展一下让它每天定时运行将 n 天前的文件删掉，有没有人能给我一些提示，谢谢！
+还有个问题，对于前面那位朋友提到的"find / -atime +30 -exec rm -f {} \;
+"方法，我很早就试过几次，不过好像都不太对，参数 -atime n 是查找n天前被访问过的文件，我不明白的是这里的时间参照点是什么，以及这个n天是怎么计算的。
+问 题二、对于"ll |cut -f 1" 这个命令我是不是用错了，我只想取出 ll 中列出的文件名，但用cut -f 命令做不到 ，我只好换用 ll |cut -c 59- 这种方式得到我要的文件名，but it’s a pool idear ！我也试过用awk ，好像也不对，看看大家可不可以给我一些小小的提醒，TKS SO MUCH
+问题三、如何改变 I结点 的日期格式 我现在的系统显示的格式是：
+-rw-r—– 1 msahz01 users 2253 2002年2月 2日 poheader.i
+我想把这换成
+-rw-rw-rw- 1 house users 2193 Apr 19 2001 hkdisp.p
+如何才能做到这点？
+awk 应该可以
+ll | awk ‘{print $9}’
+删除多少天之前的文件
+find /yourpath -mtime +31 -exec rm {} \;
+find /yourpath -mtime +366 -exec rm {} \;
+
+find中, -ctime, -mtime及其-atime有何区别
+
+请问 -ctime 和 -mtime 有什么关系 ?
+如果父目录的 ctime 改变, 那它下面的文件的 ctime 就会自动都改了吗 ?
+-ctime 和 -mtime ,-atime 这些信息是存在哪儿呢 ?
+
+我用 -mtime -1 找到了新建或改的文件.
+但怎样才能找到一天内 mv 来的文件呢( 它们的时间是原有的时间,早于一天 ) ?
+
+用-newer选项啊。
+你可以先touch一个你想要的时间的文件如下：
+$ touch -t 08190800 test
+$ ls -l test
+-rw-r–r– 1 dba other 0 Aug 19 08:00 test
+然后
+$ find . -newer test -print
+.
+./.sh_history
+$ ls -l .sh_history
+-rw——- 1 dba other 154 Aug 20 17:39 .sh_history
+
+用touch可以写出你想要的任何时间的文件，然后用-newer ,! -newer选项即可成功。
+
+1.ctime含inode信息修改的时间.mtime只指文件内容建立或修改的时间.
+2 不会.
+3.这些信息应该是存在文件系统的超级块里.
+
+我查了书 -ctime 是指 inode 的改变(或称文件的状态改变).
+请问 inode 存了哪些信息 ?
+做了些小测试,-mtime 改, -ctime 一定也改.
+改文件名, -ctime 也会改.
+谁能回答 i-node 存了哪些东西 ?
+
+vi /usr/include/sys/inode.h
+
+班主,我不能 access /usr/include/sys/inode.h .
+摘书如下:
+Directories contain directory entries. Each entry contains a file or subdirectory name and an index node reference number (i-node number). To increase speed and enhance use of disk space, the data in a file is stored at various locations in the computer’s memory. The i-node contains the addresses used to locate all the scattered blocks of data associated with a file. The i-node also records other information about the file including time of modification and access, access modes, number of links, file owner, and file type.
+可我发现 -atime 改了, -ctime 还没改. why ?
+( 我先 cat 一个 ASCII 文件,再用 -atime -1 有它用 -ctime -1 居然没有它.)
+着岂不跟 inode 信息改变, ctime 就改矛盾吗?
+
+我不同意你贴出来的那段文章,正如我提到的那样,atime,ctime,mtime是放到超级块里,在sco unix下是一种叫stat的结构.(stat_32),不同的系统文件系统可能不同.
+sco 下inode的结构如下:
+
+typedef struct inode
+{
+struct inode *i_forw; /* inode hash chain */
+struct inode *i_back; /* ‘’ */
+struct inode *av_forw; /* freelist chain */
+struct inode *av_back; /* ‘’ */
+int *i_fsptr; /* "typeless" pointer to fs dependent */
+ino32_t i_number; /* i number, 1-to-1 with dev address */
+ushort i_ftype; /* file type = IFDIR, IFREG, etc. */
+short i_fstyp; /* File system type */
+off_t i_size; /* size of file */
+ushort i_uid; /* owner */
+ushort i_gid; /* group of owner */
+ushort i_flag;
+ushort i_want; /* i_flag extension to avoid MP races */
+ushort i_count; /* reference count */
+short i_nlink; /* directory entries */
+dev_t i_rdev; /* Raw device number */
+#define i_namtype i_rdev /* i_ftype==IFNAM subtype */
+dev_t i_dev; /* device where inode resides */
+struct mount *i_mton;/* ptr to mount table entry that */
+/* this directory is mounted on */
+struct region *i_rp; /* ptr to shared region if any */
+struct stdata *i_sp; /* ptr to associated stream */
+struct iisem *isem; /* ptr to XENIX semaphores */
+struct iisd *isd; /* ptr to XENIX shared data */
+} i_un;
+#define i_mnton i_un.i_mton /* i_ftype==IFDIR IMOUNT */
+#define i_rptr i_un.i_rp /* i_ftype==IFREG || i_ftype==IFBLK */
+#define i_sptr i_un.i_sp /* i_ftype==IFCHR || i_ftype==IFIFO */
+#define i_sem i_un.isem /* i_ftype==IFNAM && i_namtype==IFSEM */
+#define i_sd i_un.isd /* i_ftype==IFNAM && i_namtype==IFSHD */
+
+struct fstypsw *i_fstypp; /* ptr to file system switch FSPTR */
+long *i_filocks; /* pointer to filock (structure) list */
+unsigned long i_mappages; /* number of pages currently cached */
+unsigned long i_vcode; /* read-ahead block save (NFS) */
+short i_wcnt; /* write open count or ITEXT count */
+struct lockb i_cilock; /* tas to synchronize i_flag changes */
+ushort i_rdlocks; /* count of non-exclusive lockers */
+} inode_t;
+
+所以,访问一个文件不能改变inode信息.
+使用chown, chgrp, chmod命令可以很好的比较mtime和ctime
+chown改变一个文件的属主,用ctime可以找到,用mtime便找不到.
+试试看.
+
+多谢斑竹! 我是在 Solaris 上面试的.我是对 -ctime 不明白.
+试的结果如下:
+修改文件,-mtime 改了, -ctime 也会改.
+访问文件,-atime 改了, -ctime 没变.
+chown, chgrp, chmod,mv, 都会使 -ctime 改变,但不影响 -atime 和 -mtime.
+touch 可以改 -mtime and/or -atime,但 touch -a 只改访问时间时,-ctime也改了.
+touch -m 改修改时间时,-ctime当然也改了.
+好象还有别的很多东西可以令 -ctime 改变, 搞不清楚.
+有什么方法可以显示 -mtime,atime,ctime 吗?
+可以用 -ctime 来实现对目录的增量文件进行备份或 transfer 吗 ?
+多谢!
+
+没有什么工具显示,(可能是俺不知道)
+把下面程序里的st_mtime换成st_ctime,或st_atime便可以得到你要的了.
+#include
+int
+main (int argc, char **argv)
+{
+struct stat buf;
+char date[80];
+char fname[80];
+printf("Enter filename (with full path) to check mtime : ");
+scanf("%s",fname);
+stat(fname, &buf);
+printf ("mtime (in sec) of %s = %ld\n", fname, buf.st_mtime);
+strcpy(date, ctime((time_t *)&(buf.st_mtime)));
+printf ("mtime (in date) of %s = %s\n", fname, date);
+}
+
+至于文件备份,有什么不可以的么?
+
+mtime ls -l 最近修改文件内容的时间
+atime ls -lu 最近访问文件的时间
+ctime ls -li 最近文件有所改变的状态 ,如文件修改,属性\属主 改变 ,节点 ,链接变化等 ,应该是不拘泥只是时间前后的改变
+
+俺看了ls的帮助,以为只是按ctime或atime排序,显示的时间还是mtime.
+
+仔细比较了一下,ayhan说的是对的.谢谢ayhan.
+
+多谢 ahyan 提示 ! 我在 Solaris 上试过如下:
+mtime 用 ls -l 看到
+atime 用 ls -lu 看到
+ctime 用 ls -lc 看到. (ls -li 只有 inode number)
+摘书如下:
+-c Uses time of last modification of the i-node (file
+created, mode changed, and so forth) for sorting (-t)
+or printing (-l or -n).
+-u Uses time of last access instead of last modification
+for sorting (with the -t option) or printing (with the
+-l option).
+-i For each file, prints the i-node number in the first
+column of the report.
